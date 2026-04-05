@@ -9,7 +9,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppShell from "@/components/AppShell";
-import { Loader2 } from "lucide-react";
+import {Loader2, LogIn} from "lucide-react";
+
+// registration/login
+import Login from "@/pages/Login.tsx"
 
 // Lazy-loaded pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -60,6 +63,10 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/artykuly/:slug" element={<ArticlePage />} />
                   <Route path="/mapa" element={<MapPage />} />
+
+                    {/* Registration/ login routes */}
+
+                    <Route path="/login" element={<Login />} />
 
                   {/* Authenticated routes */}
                   <Route
