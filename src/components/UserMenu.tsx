@@ -22,7 +22,9 @@ export default function UserMenu() {
   if (!isAuthenticated) {
     return (
       <Button variant="outline" size="sm" className="gap-1.5" onClick={login}>
-        <LogIn className="h-4 w-4" /> {pl.auth.signIn}
+          <Link to="/login">
+              <LogIn className="h-4 w-4" /> {pl.auth.signIn}
+          </Link>
       </Button>
     );
   }

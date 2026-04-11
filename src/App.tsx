@@ -12,8 +12,8 @@ import AppShell from "@/components/AppShell";
 import {Loader2, LogIn} from "lucide-react";
 
 // registration/login
-import Login from "@/components/Forms/Login.tsx"
-import Register from "@/components/Forms/Register.tsx"
+const Login = lazy(() => import("./components/Forms/Login"));
+const Register = lazy(() => import("./components/Forms/Register"));
 
 // Lazy-loaded pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -23,6 +23,7 @@ const SubmitPage = lazy(() => import("./pages/SubmitPage"));
 const MySubmissionsPage = lazy(() => import("./pages/MySubmissionsPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Categories = lazy(() => import("./pages/Categories"))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,7 @@ const App = () => (
                 <Routes>
                   {/* Public routes — Polish URLs */}
                   <Route path="/" element={<Index />} />
+                  <Route path="/categories" element={<Categories />} />
                   <Route path="/artykuly/:slug" element={<ArticlePage />} />
                   <Route path="/mapa" element={<MapPage />} />
 

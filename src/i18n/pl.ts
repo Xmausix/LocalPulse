@@ -14,6 +14,7 @@ const pl = {
     report: "Zglos",
     admin: "Panel admina",
     mySubmissions: "Moje zgloszenia",
+    category: "Lokalnie"
   },
 
   // Auth

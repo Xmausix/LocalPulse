@@ -15,7 +15,6 @@ import {
 } from "@/data/mockData";
 import pl from "@/i18n/pl";
 
-// ✅ WAŻNE – CSS Leaflet
 import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
@@ -27,7 +26,6 @@ import {
     useMap,
 } from "react-leaflet";
 
-// ✅ FIX ikon (działa z Vite / React)
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
@@ -38,7 +36,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: markerShadow,
 });
 
-function createSeverityIcon(severity: string) {
+function createSeverityIcon(severity: string, active = false) {
     const color =
         severity === "critical"
             ? "#ef4444"
@@ -49,32 +47,43 @@ function createSeverityIcon(severity: string) {
     return L.divIcon({
         className: "",
         html: `<div style="
-            width: 20px;
-            height: 20px;
+            width: ${active ? 26 : 20}px;
+            height: ${active ? 26 : 20}px;
             background: ${color};
             border: 3px solid white;
             border-radius: 50%;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transform: ${active ? "scale(1.2)" : "scale(1)"};
+            transition: all 0.2s;
             ${severity === "critical" ? "animation: pulse 1.5s infinite;" : ""}
         "></div>
         <style>
         @keyframes pulse {
             0%, 100% { box-shadow: 0 0 0 0 ${color}88; }
-            50% { box-shadow: 0 0 0 8px ${color}00; }
+            50% { box-shadow: 0 0 0 10px ${color}00; }
         }
         </style>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-        popupAnchor: [0, -14],
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
     });
 }
 
-interface Coordinates {
-    lat: number;
-    lng: number;
+function FitBounds({ items }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (items.length > 0) {
+            const bounds = L.latLngBounds(
+                items.map((i) => [i.coordinates.lat, i.coordinates.lng])
+            );
+            map.fitBounds(bounds, { padding: [40, 40] });
+        }
+    }, [items, map]);
+
+    return null;
 }
 
-function FlyToIncident({ coordinates }: { coordinates: Coordinates | null }) {
+function FlyToIncident({ coordinates }) {
     const map = useMap();
 
     useEffect(() => {
@@ -91,6 +100,7 @@ function FlyToIncident({ coordinates }: { coordinates: Coordinates | null }) {
 export default function MapPage() {
     const [category, setCategory] = useState("all");
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
 
     const filtered =
         category === "all"
@@ -99,15 +109,12 @@ export default function MapPage() {
 
     const selected = filtered.find((i) => i.id === selectedId) ?? null;
 
-    const center: [number, number] =
-        filtered.length > 0
-            ? [
-                filtered.reduce((s, i) => s + i.coordinates.lat, 0) /
-                filtered.length,
-                filtered.reduce((s, i) => s + i.coordinates.lng, 0) /
-                filtered.length,
-            ]
-            : [52.23, 21.01];
+    useEffect(() => {
+        if (selectedId) {
+            const el = document.getElementById(`inc-${selectedId}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [selectedId]);
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
@@ -134,77 +141,88 @@ export default function MapPage() {
                 />
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4 flex-1">
-                    {/* ✅ MAPA */}
+                    {/* MAPA */}
                     <div className="lg:col-span-2 rounded-xl border overflow-hidden h-[500px] z-0">
-                        {typeof window !== "undefined" && (
-                            <MapContainer
-                                center={center}
-                                zoom={12}
-                                style={{ height: "100%", width: "100%" }}
-                                scrollWheelZoom={true}
-                            >
-                                <TileLayer
-                                    attribution='&copy; OpenStreetMap'
-                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                />
+                        <MapContainer
+                            center={[52.23, 21.01]}
+                            zoom={12}
+                            style={{ height: "100%", width: "100%" }}
+                            scrollWheelZoom={true}
+                        >
+                            <TileLayer
+                                attribution='&copy; OpenStreetMap'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
 
-                                <FlyToIncident
-                                    coordinates={
-                                        selected ? selected.coordinates : null
-                                    }
-                                />
+                            <FitBounds items={filtered} />
 
-                                {filtered.map((inc) => (
-                                    <Marker
-                                        key={inc.id}
-                                        position={[
-                                            inc.coordinates.lat,
-                                            inc.coordinates.lng,
-                                        ]}
-                                        icon={createSeverityIcon(
-                                            inc.severity
-                                        )}
-                                        eventHandlers={{
-                                            click: () => {
-                                                setSelectedId(inc.id);
-                                            },
-                                        }}
-                                    >
-                                        <Popup>
-                                            <div style={{ minWidth: "180px" }}>
-                                                <span
-                                                    className={`${getSeverityColor(
-                                                        inc.severity
-                                                    )} text-[10px] px-1.5 py-0.5 rounded font-semibold`}
-                                                >
-                                                    {getSeverityLabel(
-                                                        inc.severity
-                                                    ).toUpperCase()}
-                                                </span>
+                            <FlyToIncident
+                                coordinates={
+                                    selected ? selected.coordinates : null
+                                }
+                            />
 
-                                                <p className="font-bold text-sm mt-1 mb-0.5">
-                                                    {inc.title}
-                                                </p>
+                            {filtered.map((inc) => (
+                                <Marker
+                                    key={inc.id}
+                                    position={[
+                                        inc.coordinates.lat,
+                                        inc.coordinates.lng,
+                                    ]}
+                                    icon={createSeverityIcon(
+                                        inc.severity,
+                                        inc.id === selectedId ||
+                                        inc.id === hoveredId
+                                    )}
+                                    eventHandlers={{
+                                        click: () => {
+                                            setSelectedId(inc.id);
+                                            setTimeout(() => {
+                                                const el = document.getElementById(
+                                                    `inc-${inc.id}`
+                                                );
+                                                el?.scrollIntoView({
+                                                    behavior: "smooth",
+                                                    block: "center",
+                                                });
+                                            }, 100);
+                                        },
+                                    }}
+                                >
+                                    <Popup>
+                                        <div style={{ minWidth: "180px" }}>
+                                            <span
+                                                className={`${getSeverityColor(
+                                                    inc.severity
+                                                )} text-[10px] px-1.5 py-0.5 rounded font-semibold`}
+                                            >
+                                                {getSeverityLabel(
+                                                    inc.severity
+                                                ).toUpperCase()}
+                                            </span>
 
-                                                <p className="text-xs text-muted-foreground mb-1">
-                                                    {inc.location} ·{" "}
-                                                    {formatTimeAgo(
-                                                        inc.timestamp
-                                                    )}
-                                                </p>
+                                            <p className="font-bold text-sm mt-1 mb-0.5">
+                                                {inc.title}
+                                            </p>
 
-                                                <Link
-                                                    to={`/artykuly/${inc.slug}`}
-                                                    className="text-xs text-blue-600 underline"
-                                                >
-                                                    Pełny artykuł →
-                                                </Link>
-                                            </div>
-                                        </Popup>
-                                    </Marker>
-                                ))}
-                            </MapContainer>
-                        )}
+                                            <p className="text-xs text-muted-foreground mb-1">
+                                                {inc.location} ·{" "}
+                                                {formatTimeAgo(
+                                                    inc.timestamp
+                                                )}
+                                            </p>
+
+                                            <Link
+                                                to={`/artykuly/${inc.slug}`}
+                                                className="text-xs text-blue-600 underline"
+                                            >
+                                                Pełny artykuł →
+                                            </Link>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            ))}
+                        </MapContainer>
                     </div>
 
                     {/* PANEL */}
@@ -272,10 +290,22 @@ export default function MapPage() {
                             filtered.map((inc) => (
                                 <button
                                     key={inc.id}
-                                    className="w-full text-left rounded-xl border bg-card p-3 hover:bg-accent/50"
+                                    id={`inc-${inc.id}`}
+                                    onMouseEnter={() =>
+                                        setHoveredId(inc.id)
+                                    }
+                                    onMouseLeave={() =>
+                                        setHoveredId(null)
+                                    }
                                     onClick={() =>
                                         setSelectedId(inc.id)
                                     }
+                                    className={`w-full text-left rounded-xl border p-3 transition
+                                        ${
+                                        selectedId === inc.id
+                                            ? "bg-accent"
+                                            : "bg-card hover:bg-accent/50"
+                                    }`}
                                 >
                                     <div className="flex items-center gap-2 mb-1">
                                         <Badge
