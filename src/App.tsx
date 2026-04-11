@@ -12,7 +12,8 @@ import AppShell from "@/components/AppShell";
 import {Loader2, LogIn} from "lucide-react";
 
 // registration/login
-import Login from "@/pages/Login.tsx"
+import Login from "@/components/Forms/Login.tsx"
+import Register from "@/components/Forms/Register.tsx"
 
 // Lazy-loaded pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -67,6 +68,7 @@ const App = () => (
                     {/* Registration/ login routes */}
 
                     <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
 
                   {/* Authenticated routes */}
                   <Route
